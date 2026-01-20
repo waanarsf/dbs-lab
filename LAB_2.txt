@@ -1,164 +1,179 @@
-LAB_2
-PART 1:
-1. CREATE TABLE Employee (EMPNO INT PRIMARY KEY,EMPNAME VARCHAR(20) NOT NULL,
-GENDER CHAR(1) NOT NULL CHECK (GENDER IN ('M','F')),
-SALARY INT NOT NULL, ADDRESS VARCHAR(20) NOT NULL, DNO INT);
-
-2.  CREATE TABLE DEPARTMENT (DEPTNO INT PRIMARY KEY, DEPTNAME VARCHAR(20) UNIQUE NOT NULL,LOCATION VARCHAR(20));
-
-3.ALTER TABLE EMPLOYEE ADD CONSTRAINT FK_EMP_DEPT FOREIGN KEY (DNO) REFERENCES DEPARTMENT(DEPTNO);
-
-4. INSERT INTO DEPARTMENT (DEPTNO, DEPTNAME, LOCATION)VALUES(2001, 'IT', 'Manipal');
-INSERT INTO EMPLOYEE(EMPNO,EMPNAME,GENDER,SALARY,ADDRESS,DNO)VALUES(01,'KJ','F',2100,'Manipal',2001);
-
-5.INSERT INTO EMPLOYEE(EMPNO,EMPNAME,GENDER,SALARY,ADDRESS,DNO)VALUES(NULL,'RJ','M',2000,'Manipal',2003);
-ERROR at line 1:
-ORA-01400: cannot insert NULL into ("ITA63"."EMPLOYEE"."EMPNO")
-  
-6.DELETE FROM DEPARTMENT WHERE DEPTNO = 2001;
-DELETE FROM DEPARTMENT WHERE DEPTNO = 2001
-*
-ERROR at line 1:
-ORA-02292: integrity constraint (ITA63.FK_EMP_DEPT) violated - child record
-found
-
-7. ALTER TABLE EMPLOYEE DROP CONSTRAINT FK_EMP_DEPT;
-ALTER TABLE EMPLOYEE ADD CONSTRAINT FK_EMP_DEPT FOREIGN KEY (DNO) REFERENCES DEPARTMENT(DEPTNO) ON DELETE CASCADE;
-
-8. ALTER TABLE EMPLOYEE ADD CONSTRAINT MIN_SALARY_RULE CHECK (SALARY >= 10000);
+LAB2 240911742
 
 
-PART 2:
-24.alter table employee add "dob" date;
- UPDATE EMPLOYEE SET "dob" = TO_DATE('15-05-1995', 'DD-MM-YYYY') WHERE EMPNO = 2;
- UPDATE EMPLOYEE SET "dob" = TO_DATE('17-07-1997', 'DD-MM-YYYY') WHERE EMPNO = 4;
- UPDATE EMPLOYEE SET "dob" = TO_DATE('13-03-1993', 'DD-MM-YYYY') WHERE EMPNO = 3;
- SELECT TO_CHAR("dob", 'DD-MON-YYYY') FROM EMPLOYEE;
- SELECT TO_CHAR("dob", 'DD-MON-YY') FROM EMPLOYEE;
- SELECT TO_CHAR("dob", 'DD-MM-YY') FROM EMPLOYEE;
-
-25.SELECT EMPNAME,TO_CHAR("dob", 'YEAR') FROM EMPLOYEE;
- SELECT EMPNAME,TO_CHAR("dob", 'Year') FROM EMPLOYEE;
- SELECT EMPNAME,TO_CHAR("dob", 'year') FROM EMPLOYEE;
-
-9. select name,dept_name from student;
-NAME                 DEPT_NAME
--------------------- --------------------
-Zhang                Comp. Sci.
-Shankar              Comp. Sci.
-Brandt               History
-Chavez               Finance
-Peltier              Physics
-Levy                 Physics
-Williams             Comp. Sci.
-Sanchez              Music
-Snow                 Physics
-Brown                Comp. Sci.
-Aoi                  Elec. Eng.
-Bourikas             Elec. Eng.
-Tanaka               Biology
-
-10.select * from instructor where dept_name = 'Comp. Sci.';
-ID    NAME                 DEPT_NAME                SALARY
------ -------------------- -------------------- ----------
-10101 Srinivasan           Comp. Sci.                65000
-45565 Katz                 Comp. Sci.                75000
-83821 Brandt               Comp. Sci.                92000
+1.CREATE TABLE Employee ( EmpNo INT PRIMARY KEY, EmpName VARCHAR(100) NOT NULL, Gender CHAR(1) NOT NULL CHECK (Gender IN ('M', 'F')), Salary DECIMAL(10,2) NOT NULL, Address VARCHAR(255) NOT NULL, DNo INT );
 
 
-11.select title from course where dept_name = 'Comp. Sci.' and credits = 3;
+2.create table department ( DeptNo int primary key, DeptName Varchar(100) unique, Location varchar(100));
 
-TITLE
---------------------------------------------------
-Robotics
-Image Processing
-Database System Concepts
+3. Alter table Employee add CONSTRAINTS fK_department foreign key(DNo) references Department(DeptNo);
 
-12.select student.name,course.course_id,course.title from takes,course,student where takes.course_id = course.course_id and student.id = '12345';
-NAME                 COURSE_I TITLE
--------------------- -------- --------------------------------------------------
-Shankar              CS-101   Intro. to Computer Science
-Shankar              CS-347   Database System Concepts
-Shankar              CS-101   Intro. to Computer Science
-Shankar              CS-190   Game Design
-Shankar              CS-315   Robotics
-Shankar              CS-347   Database System Concepts
-Shankar              HIS-351  World History
-Shankar              FIN-201  Investment Banking
-Shankar              PHY-101  Physical Principles
-Shankar              CS-101   Intro. to Computer Science
-Shankar              CS-101   Intro. to Computer Science
-Shankar              CS-319   Image Processing
-Shankar              CS-101   Intro. to Computer Science
-Shankar              CS-190   Game Design
-Shankar              MU-199   Music Video Production
-Shankar              CS-101   Intro. to Computer Science
-Shankar              CS-319   Image Processing
 
-13. SELECT i.name, i.salary, d.dept_name, d.building FROM instructor i JOIN department d ON i.dept_name = d.dept_name WHERE i.salary BETWEEN 40000 AND 90000;
+4.INSERT INTO Department (DeptNo, DeptName, Location)
+VALUES (1, 'HR', 'Mumbai');
 
-NAME                     SALARY DEPT_NAME            BUILDING
--------------------- ---------- -------------------- ---------------
-Srinivasan                65000 Comp. Sci.           Taylor
-Wu                        90000 Finance              Painter
-Mozart                    40000 Music                Packard
-El Said                   60000 History              Painter
-Gold                      87000 Physics              Watson
-Katz                      75000 Comp. Sci.           Taylor
-Califieri                 62000 History              Painter
-Singh                     80000 Finance              Painter
-Crick                     72000 Biology              Watson
-Kim                       80000 Elec. Eng.           Taylor
+INSERT INTO Department (DeptNo, DeptName, Location)
+VALUES (2, 'IT', 'Bangalore');
 
-14.SELECT i.ID, i.name FROM instructor i WHERE NOT EXISTS (SELECT 1 FROM teaches t WHERE t.ID = i.ID);
+INSERT INTO Department (DeptNo, DeptName, Location)
+VALUES (3, 'Finance', 'Delhi');
 
-ID    NAME
------ --------------------
-33456 Gold
-58583 Califieri
-76543 Singh
 
-15.SELECT s.name, c.title, t.year FROM student s JOIN takes t ON s.id = t.id JOIN course c ON t.course_id = c.course_id JOIN section sec ON t.course_id = sec.course_id AND t.sec_id = sec.sec_id AND t.semester = sec.semester AND t.year = sec.year WHERE sec.room_number = '101';
+INSERT INTO Employee (EmpNo, EmpName, Gender, Salary, Address, DNo) VALUES (101, 'Ravi Kumar', 'M', 50000, 'Udupi', 2); INSERT INTO Employee (EmpNo, EmpName, Gender, Salary, Address, DNo) VALUES (102, 'Meena Sharma', 'F', 60000, 'Mangalore', 1); INSERT INTO Employee (EmpNo, EmpName, Gender, Salary, Address, DNo) VALUES (103, 'Arjun Singh', 'M', 55000, 'Udupi', 3); INSERT INTO Employee (EmpNo, EmpName, Gender, Salary, Address, DNo) VALUES (104, 'Priya Nair', 'F', 65000, 'Chennai', 2);
 
-NAME                 TITLE                                                    YEAR
--------------------- -------------------------------------------------- ----------
-Bourikas             Intro. to Computer Science                               2009
-Brown                Intro. to Computer Science                               2009
-Williams             Intro. to Computer Science                               2009
-Levy                 Intro. to Computer Science                               2009
-Levy                 Intro. to Computer Science                               2010
-Shankar              Intro. to Computer Science                               2009
-Zhang                Intro. to Computer Science                               2009
-Chavez               Investment Banking                                       2010
-Sanchez              Music Video Production                                   2010
 
-16.SELECT s.NAME, c.COURSE_ID, c.TITLE AS "c-name" FROM STUDENT s JOIN TAKES t ON s.ID = t.ID JOIN COURSE c ON t.COURSE_ID = c.COURSE_ID WHERE t.YEAR = 2009;
 
-NAME                 COURSE_I c-name
--------------------- -------- --------------------------------------------------
-Tanaka               BIO-101  Intro. to Biology
-Bourikas             CS-101   Intro. to Computer Science
-Brown                CS-101   Intro. to Computer Science
-Williams             CS-101   Intro. to Computer Science
-Levy                 CS-101   Intro. to Computer Science
-Shankar              CS-101   Intro. to Computer Science
-Zhang                CS-101   Intro. to Computer Science
-Williams             CS-190   Game Design
-Shankar              CS-190   Game Design
-Shankar              CS-347   Database System Concepts
-Zhang                CS-347   Database System Concepts
 
-17.SELECT name, salary AS "inst-salary" FROM instructor WHERE salary > (SELECT MIN(salary) FROM instructor WHERE dept_name LIKE 'Comp%Sci%');
+5.INSERT INTO Employee (EmpNo, EmpName, Gender, Salary, Address, DNo)
+VALUES (201, NULL, 'M', 40000, 'Delhi', 1);
 
-NAME                 inst-salary
--------------------- -----------
-Wu                         90000
-Einstein                   95000
-Gold                       87000
-Katz                       75000
-Singh                      80000
-Crick                      72000
-Brandt                     92000
-Kim                        80000
 
-18.
+INSERT INTO Employee (EmpNo, EmpName, Gender, Salary, Address, DNo)
+VALUES (202, 'Sneha', 'X', 45000, 'Mumbai', 2);
+
+
+INSERT INTO Employee (EmpNo, EmpName, Gender, Salary, Address, DNo)
+VALUES (203, 'Karan', 'M', 50000, 'Chennai', 99);
+
+
+
+INSERT INTO Employee (EmpNo, EmpName, Gender, Salary, Address, DNo)
+VALUES (101, 'Duplicate Ravi', 'M', 60000, 'Delhi', 2);
+
+6.DELETE FROM Employee
+WHERE DNo = 2;
+
+DELETE FROM Department
+WHERE DeptNo = 2;
+
+
+7.Alter table Employee drop constraint fk_department;
+
+
+
+8.ALTER TABLE Employee
+ADD CONSTRAINT chk_min_salary
+CHECK (Salary >= 10000);
+
+INSERT INTO Employee (EmpNo, EmpName, Gender, Salary, Address, DNo)
+VALUES (301, 'Anita Rao', 'F', 12000, 'Udupi', 1);
+
+
+INSERT INTO Employee (EmpNo, EmpName, Gender, Salary, Address, DNo)
+VALUES (402, 'Vijay Patil', 'M', 8000, 'Mangalore', 2);
+
+
+
+
+
+
+9.SELECT name, dept_name
+FROM Student;
+
+
+
+
+10.SELECT name
+FROM Instructor
+WHERE dept_name = 'CSE';
+
+
+11.SELECT title
+FROM Course
+WHERE dept_name = 'CSE' AND credits = 3;
+
+
+12.SELECT T.course_id, C.title
+FROM Takes T
+JOIN Course C ON T.course_id = C.course_id
+WHERE T.ID = 12345;
+
+
+13.SELECT name, salary
+FROM Instructor
+WHERE salary BETWEEN 40000 AND 90000;
+
+
+14.SELECT I.ID
+FROM Instructor I
+WHERE I.ID NOT IN (
+    SELECT T.ID
+    FROM Teaches T
+);
+
+
+15.SELECT S.name, C.title, Sec.year
+FROM Student S
+JOIN Takes T 
+    ON S.ID = T.ID
+JOIN Section Sec 
+    ON T.course_id = Sec.course_id
+   AND T.sec_id    = Sec.sec_id
+   AND T.semester  = Sec.semester
+   AND T.year      = Sec.year
+JOIN Course C 
+    ON Sec.course_id = C.course_id
+WHERE Sec.room_number = '303';
+
+
+
+
+16.SELECT S.name, T.course_id, C.title AS c_name
+FROM Student S, Takes T, Course C
+WHERE S.ID = T.ID
+  AND T.course_id = C.course_id
+  AND T.year = 2015;
+
+17.SELECT I.name, I.salary AS inst_salary
+FROM Instructor I
+WHERE I.salary > ANY (
+    SELECT salary
+    FROM Instructor
+    WHERE dept_name LIKE '%CSE%'
+);
+
+
+18.SELECT name
+FROM Instructor
+WHERE dept_name LIKE '%ch%';
+
+
+19.SELECT name, LENGTH(name) AS name_length
+FROM Student;
+
+
+20.SELECT dept_name, SUBSTR(dept_name, 3, 3) AS part_name
+FROM Department;
+
+
+21.SELECT UPPER(name) AS upper_name
+FROM Instructor;
+
+
+22.SELECT ID, course_id, NVL(grade, '0') AS grade
+FROM Takes;
+
+
+23.SELECT salary, ROUND(salary/3, -2) AS rounded_salary
+FROM Instructor;
+
+24A)-SELECT EmpNo, EmpName FROM Employee;
+
+UPDATE Employee
+SET DOB = DATE '1990-05-12'
+WHERE EmpNo = 401;
+
+SELECT EmpName, TO_CHAR(DOB, 'DD-MON-YYYY') AS Birth_Date
+FROM Employee;
+
+
+
+24.SELECT EmpName, TO_CHAR(DOB, 'DD-MON-YYYY') FROM Employee;
+SELECT EmpName, TO_CHAR(DOB, 'DD-MON-YY') FROM Employee;
+SELECT EmpName, TO_CHAR(DOB, 'DD-MM-YY') FROM Employee;
+
+
+
+25.SELECT EmpName, TO_CHAR(DOB, 'YEAR') FROM Employee;
+SELECT EmpName, INITCAP(TO_CHAR(DOB, 'YEAR')) FROM Employee;
+SELECT EmpName, LOWER(TO_CHAR(DOB, 'YEAR')) FROM Employee;
