@@ -1,0 +1,142 @@
+LAB_3 240911742
+
+1. SELECT course_id FROM section WHERE semester = 'Fall' AND year = 2009 UNION ALL SELECT course_id FROM section WHERE semester = 'Spring' AND year = 2010;
+COURSE_I
+--------
+CS-101
+CS-347
+PHY-101
+CS-101
+CS-315
+CS-319
+CS-319
+FIN-201
+HIS-351
+MU-199
+
+2. SELECT course_id FROM section WHERE semester = 'Fall' AND year = 2009 INTERSECT SELECT course_id FROM section WHERE semester = 'Spring' AND year = 2010;
+COURSE_I
+--------
+CS-101
+
+3.SELECT course_id FROM section WHERE semester = 'Fall' AND year = 2009 MINUS SELECT course_id FROM section WHERE semester = 'Spring' AND year = 2010;
+COURSE_I
+--------
+CS-347
+PHY-101
+
+4.SELECT title FROM course WHERE course_id NOT IN ( SELECT course_id FROM takes);
+TITLE
+--------------------------------------------------
+Computational Biology
+
+5.SELECT DISTINCT course_id FROM section WHERE semester = 'Fall' AND year = 2009 AND course_id IN (SELECT course_id FROM section WHERE semester = 'Spring' AND year = 2010);
+COURSE_I
+--------
+CS-101
+
+6.SELECT COUNT(DISTINCT ID) FROM takes WHERE (course_id, sec_id, semester, year) IN (SELECT course_id, sec_id, semester, year FROM teaches WHERE ID = '10101');
+COUNT(DISTINCTID)
+-----------------
+                6
+
+7.SELECT DISTINCT course_id FROM section WHERE semester = 'Fall' AND year = 2009 AND course_id NOT IN (SELECT course_id FROM section WHERE semester = 'Spring' AND year = 2010);
+COURSE_I
+--------
+CS-347
+PHY-101
+
+8.SELECT name FROM student WHERE name IN (SELECT name FROM instructor);
+NAME
+--------------------
+Brandt
+
+9.SELECT name FROM instructor WHERE salary > SOME (SELECT salary FROM instructor WHERE dept_name = 'Biology');
+NAME
+--------------------
+Einstein
+Brandt
+Wu
+Gold
+Kim
+Singh
+Katz
+
+10.SELECT name FROM instructor WHERE salary > ALL (SELECT salary FROM instructor WHERE dept_name = 'Biology');
+NAME
+--------------------
+Katz
+Singh
+Kim
+Gold
+Wu
+Brandt
+Einstein
+
+11.SELECT dept_name FROM instructor GROUP BY dept_name HAVING AVG(salary) >= ALL (SELECT AVG(salary) FROM instructor GROUP BY dept_name);
+DEPT_NAME
+--------------------
+Physics
+
+12. SELECT dept_name FROM department WHERE budget < (SELECT AVG(salary) FROM instructor);
+DEPT_NAME
+--------------------
+History
+Physics
+
+13.SELECT DISTINCT S1.course_id FROM section S1 WHERE S1.semester = 'Fall' AND S1.year = 2009 AND EXISTS (SELECT * FROM section S2 WHERE S2.semester = 'Spring' AND S2.year = 2010 AND S1.course_id = S2.course_id);
+COURSE_I
+--------
+CS-101
+
+14.SELECT S.ID, S.name FROM student S WHERE NOT EXISTS (SELECT C.course_id FROM course C WHERE C.dept_name = 'Biology' MINUS SELECT T.course_id FROM takes T WHERE T.ID = S.ID);
+no rows selected
+
+15.SELECT course_id FROM section WHERE year = 2009 GROUP BY course_id HAVING COUNT(sec_id) = 1;
+COURSE_I
+--------
+BIO-101
+CS-101
+CS-347
+EE-181
+PHY-101
+
+16.SELECT ID FROM takes WHERE course_id IN (SELECT course_id FROM course WHERE dept_name = 'Comp. Sci.')GROUP BY ID HAVING COUNT(course_id) >= 2;
+ID
+-----
+00128
+98765
+12345
+54321
+76543
+45678
+
+17.SELECT dept_name, avg_salary FROM (SELECT dept_name, AVG(salary) AS avg_salary FROM instructor GROUP BY dept_name) WHERE avg_salary > 42000;
+DEPT_NAME            AVG_SALARY
+-------------------- ----------
+Elec. Eng.                80000
+Physics                   91000
+Comp. Sci.           77333.3333
+Finance                   85000
+Biology                   72000
+History                   61000
+
+18.CREATE VIEW all_courses AS SELECT s.course_id, s.sec_id, s.building, s.room_number FROM section s JOIN course c ON s.course_id = c.course_id WHERE c.dept_name = 'Physics' AND s.semester = 'Fall' AND s.year = 2009;
+
+19. select * from all_courses;
+COURSE_I SEC_ID   BUILDING        ROOM_NU
+-------- -------- --------------- -------
+PHY-101  1        Watson          100
+
+20.CREATE VIEW department_total_salary AS SELECT dept_name, SUM(salary) AS total_salary FROM instructor GROUP BY dept_name;
+select * from department_total_salary;
+
+DEPT_NAME            TOTAL_SALARY
+-------------------- ------------
+Elec. Eng.                  80000
+Physics                    182000
+Comp. Sci.                 232000
+Finance                    170000
+Biology                     72000
+Music                       40000
+History                    122000
