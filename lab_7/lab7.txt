@@ -1,0 +1,365 @@
+lab7.txt
+
+
+1./*Write a PL/SQL block to display the GPA of given student.*/
+->
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+DECLARE
+    -- Variable to store user input
+    v_roll  NUMBER := &Enter_Roll_No; 
+    -- Variable to store the result from the table
+    v_gpa   NUMBER; 
+BEGIN
+    -- SQL Query to fetch the GPA
+    SELECT GPA INTO v_gpa 
+    FROM StudentTable 
+    WHERE RollNo = v_roll;
+
+    -- Output the result
+    DBMS_OUTPUT.PUT_LINE('The GPA for Student ' || v_roll || ' is: ' || v_gpa);
+
+EXCEPTION
+    -- Handling the case where the Roll No doesn't exist
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('No student found with Roll No: ' || v_roll);
+END;
+/
+
+2.Write a PL/SQL block to display the letter grade(0-4: F; 4-5: E; 5-6: D; 6-7: C;               
+7-8: B; 8-9: A; 9-10: A+} of given student.
+
+->
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+DECLARE
+    v_roll  NUMBER := &enter_roll_num;
+    v_gpa   NUMBER;
+    v_grade VARCHAR2(2); -- Use VARCHAR2 (standard for Oracle)
+BEGIN
+    SELECT GPA INTO v_gpa FROM StudentTable WHERE RollNo = v_roll;
+
+    -- Corrected ELSIF spelling and variable name (v_gpa)
+    IF v_gpa >= 9 THEN
+        v_grade := 'A+';
+    ELSIF v_gpa >= 8 THEN
+        v_grade := 'A';
+    ELSIF v_gpa >= 7 THEN
+        v_grade := 'B';
+    ELSIF v_gpa >= 6 THEN
+        v_grade := 'C';
+    ELSIF v_gpa >= 5 THEN
+        v_grade := 'D';
+    ELSIF v_gpa >= 4 THEN
+        v_grade := 'E';
+    ELSE
+        v_grade := 'F';
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE('--- Student Result ---');
+    DBMS_OUTPUT.PUT_LINE('Roll No: ' || v_roll);
+    DBMS_OUTPUT.PUT_LINE('GPA    : ' || v_gpa);
+    DBMS_OUTPUT.PUT_LINE('Grade  : ' || v_grade);
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Error: No student found with Roll No ' || v_roll);
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred.');
+END;
+/
+
+
+3.Input the date of issue and date of return for a book. Calculate and display the fine 
+with the appropriate message using a PL/SQL block. The fine is charged as per 
+the table 8.1:   
+
+->
+CREATE TABLE LibraryFine (
+    BookID NUMBER,
+    IssueDate DATE,
+    ReturnDate DATE,
+    FineAmount NUMBER
+);
+
+
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+DECLARE
+    -- Input dates (Format: DD-MM-YYYY)
+    v_issue_date   DATE := TO_DATE('&Enter_Issue_Date_DD_MM_YYYY', 'DD-MM-YYYY');
+    v_return_date  DATE := TO_DATE('&Enter_Return_Date_DD_MM_YYYY', 'DD-MM-YYYY');
+    v_days_late    NUMBER;
+    v_fine         NUMBER := 0;
+BEGIN
+    -- Calculate difference in days
+    v_days_late := v_return_date - v_issue_date;
+
+    -- Logic based on Table 8.1
+    IF v_days_late <= 7 THEN
+        v_fine := 0;
+        DBMS_OUTPUT.PUT_LINE('Status: Returned on time. NIL fine.');
+    
+    ELSIF v_days_late >= 8 AND v_days_late <= 15 THEN
+        -- Rs 1 per day
+        v_fine := v_days_late * 1;
+        DBMS_OUTPUT.PUT_LINE('Status: Late (8-15 days). Fine @ Rs 1/day.');
+
+    ELSIF v_days_late >= 16 AND v_days_late <= 30 THEN
+        -- Rs 2 per day
+        v_fine := v_days_late * 2;
+        DBMS_OUTPUT.PUT_LINE('Status: Late (16-30 days). Fine @ Rs 2/day.');
+
+    ELSE
+        -- After 30 days: Rs 5 per day
+        v_fine := v_days_late * 5;
+        DBMS_OUTPUT.PUT_LINE('Status: Severely Late (>30 days). Fine @ Rs 5/day.');
+    END IF;
+
+    -- Final Output
+    DBMS_OUTPUT.PUT_LINE('Total Days Kept: ' || v_days_late);
+    DBMS_OUTPUT.PUT_LINE('Total Fine: Rs ' || v_fine);
+
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Please ensure dates are in DD-MM-YYYY format.');
+END;
+/
+
+
+ 
+4. Write a PL/SQL block to print the letter grade of all the students(RollNo: 1 - 5).
+->
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+DECLARE
+    v_roll   NUMBER := 1;
+    v_gpa    NUMBER;
+    v_grade  VARCHAR2(2);
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('--- Student Grade Report ---');
+    
+    LOOP
+        -- Fetch GPA
+        SELECT GPA INTO v_gpa FROM StudentTable WHERE RollNo = v_roll;
+
+        -- Fixed Logic: Assign 'F' to v_grade, NOT v_gpa
+        IF v_gpa >= 9 THEN v_grade := 'A+';
+        ELSIF v_gpa >= 8 THEN v_grade := 'A';
+        ELSIF v_gpa >= 7 THEN v_grade := 'B';
+        ELSIF v_gpa >= 6 THEN v_grade := 'C';
+        ELSIF v_gpa >= 5 THEN v_grade := 'D';
+        ELSIF v_gpa >= 4 THEN v_grade := 'E';
+        ELSE v_grade := 'F'; -- Fixed this line!
+        END IF;
+
+        DBMS_OUTPUT.PUT_LINE('Roll No: ' || v_roll || ' | GPA: ' || v_gpa || ' | Grade: ' || v_grade);
+
+        v_roll := v_roll + 1;
+        EXIT WHEN v_roll > 5;
+    END LOOP;
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Data for Roll No ' || v_roll || ' is missing.');
+    WHEN OTHERS THEN
+        -- This helps you debug by showing the actual Oracle error message
+        DBMS_OUTPUT.PUT_LINE('Error Code: ' || SQLCODE);
+        DBMS_OUTPUT.PUT_LINE('Error Msg: ' || SQLERRM);
+END;
+/
+
+5.Alter StudentTable by appending an additional column LetterGrade Varchar2(2).  
+Then write a PL/SQL block  to update the table with letter grade of each student. 
+
+->
+ALTER TABLE StudentTable ADD LetterGrade VARCHAR2(2);
+
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+DECLARE
+    v_roll   NUMBER := 1;  -- Start counter
+    v_gpa    NUMBER;
+    v_grade  VARCHAR2(2);
+BEGIN
+    -- The WHILE loop runs as long as the condition is true
+    WHILE v_roll <= 5 LOOP
+        
+        -- 1. Fetch GPA for the current Roll Number
+        SELECT GPA INTO v_gpa FROM StudentTable WHERE RollNo = v_roll;
+
+        -- 2. Determine the Grade
+        IF v_gpa >= 9 THEN v_grade := 'A+';
+        ELSIF v_gpa >= 8 THEN v_grade := 'A';
+        ELSIF v_gpa >= 7 THEN v_grade := 'B';
+        ELSIF v_gpa >= 6 THEN v_grade := 'C';
+        ELSIF v_gpa >= 5 THEN v_grade := 'D';
+        ELSIF v_gpa >= 4 THEN v_grade := 'E';
+        ELSE v_grade := 'F';
+        END IF;
+
+        -- 3. Update the table for the current Roll Number
+        UPDATE StudentTable 
+        SET LetterGrade = v_grade 
+        WHERE RollNo = v_roll;
+
+        DBMS_OUTPUT.PUT_LINE('Updated Roll No: ' || v_roll || ' with Grade: ' || v_grade);
+
+        -- 4. Increment the counter (Essential for WHILE loops!)
+        v_roll := v_roll + 1;
+        
+    END LOOP;
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('All records updated successfully.');
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Skipping Roll No ' || v_roll || ' (Not found)');
+        v_roll := v_roll + 1;
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+        ROLLBACK; -- Undo changes if a major error occurs
+END;
+/
+
+6.Write a PL/SQL block to find the student with max. GPA without using aggregate 
+function. 
+
+-> 
+SET SERVEROUTPUT ON;
+
+DECLARE
+    -- Variable to track the highest GPA found
+    v_max_gpa   NUMBER := 0; 
+    -- Variable to store the Roll No of the top student
+    v_top_roll  NUMBER;      
+BEGIN
+    -- The FOR loop automatically handles the counter (i) from 1 to 5
+    FOR i IN 1..5 LOOP
+        DECLARE
+            v_current_gpa NUMBER;
+        BEGIN
+            -- Fetch GPA for the current iteration (i)
+            SELECT GPA INTO v_current_gpa 
+            FROM StudentTable 
+            WHERE RollNo = i;
+
+            -- Compare current GPA with the 'v_max_gpa'
+            IF v_current_gpa > v_max_gpa THEN
+                v_max_gpa  := v_current_gpa;
+                v_top_roll := i;
+            END IF;
+            
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                NULL; -- Skip if a Roll No in the range is missing
+        END;
+    END LOOP;
+
+    -- Display the final result
+    DBMS_OUTPUT.PUT_LINE('------------------------------------');
+    DBMS_OUTPUT.PUT_LINE('The Maximum GPA found is: ' || v_max_gpa);
+    DBMS_OUTPUT.PUT_LINE('Student Roll Number: ' || v_top_roll);
+    DBMS_OUTPUT.PUT_LINE('------------------------------------');
+
+END;
+/
+
+
+7. Implement lab exercise 4 using GOTO.
+->
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+DECLARE
+    v_roll   NUMBER := 1; -- Initialize counter
+    v_gpa    NUMBER;
+    v_grade  VARCHAR2(2);
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('--- Student Grade Report (GOTO Method) ---');
+
+    -- This is the label we will jump back to
+    <<grade_loop>>
+    
+    -- 1. Fetch GPA
+    SELECT GPA INTO v_gpa FROM StudentTable WHERE RollNo = v_roll;
+
+    -- 2. Grade Logic
+    IF v_gpa >= 9 THEN v_grade := 'A+';
+    ELSIF v_gpa >= 8 THEN v_grade := 'A';
+    ELSIF v_gpa >= 7 THEN v_grade := 'B';
+    ELSIF v_gpa >= 6 THEN v_grade := 'C';
+    ELSIF v_gpa >= 5 THEN v_grade := 'D';
+    ELSIF v_gpa >= 4 THEN v_grade := 'E';
+    ELSE v_grade := 'F';
+    END IF;
+
+    -- 3. Display Output
+    DBMS_OUTPUT.PUT_LINE('Roll No: ' || v_roll || ' | GPA: ' || v_gpa || ' | Grade: ' || v_grade);
+
+    -- 4. Increment Counter
+    v_roll := v_roll + 1;
+
+    -- 5. Conditional Jump
+    IF v_roll <= 5 THEN
+        GOTO grade_loop; -- Jumps back to the label
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE('------------------------------------------');
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Roll No ' || v_roll || ' not found.');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+END;
+/
+     
+8. Based on the University database schema, write a PL/SQL block to display the 
+details of the Instructor whose name is supplied by the user. Use exceptions to 
+show appropriate error message for the following cases:  
+a. Multiple instructors with the same name  
+b. No instructor for the given name  
+
+->
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+DECLARE
+    -- Variable to hold the instructor record
+    v_instructor instructor%ROWTYPE;
+    -- Input variable from user
+    v_name instructor.name%TYPE := '&Enter_Instructor_Name';
+BEGIN
+    -- Query to fetch instructor details based on name
+    -- Using %ROWTYPE allows us to fetch all columns at once
+    SELECT * INTO v_instructor 
+    FROM instructor 
+    WHERE name = v_name;
+
+    -- If code reaches here, exactly one instructor was found
+    DBMS_OUTPUT.PUT_LINE('--- Instructor Details ---');
+    DBMS_OUTPUT.PUT_LINE('ID         : ' || v_instructor.ID);
+    DBMS_OUTPUT.PUT_LINE('Name       : ' || v_instructor.name);
+    DBMS_OUTPUT.PUT_LINE('Department : ' || v_instructor.dept_name);
+    DBMS_OUTPUT.PUT_LINE('Salary     : ' || v_instructor.salary);
+
+EXCEPTION
+    -- Case b: No instructor found
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Error: No instructor found with the name "' || v_name || '".');
+
+    -- Case a: Multiple instructors with the same name
+    WHEN TOO_MANY_ROWS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Multiple instructors found named "' || v_name || '". Please use an ID for search.');
+
+    -- Catch-all for other unexpected errors
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+END;
+/
+ 
