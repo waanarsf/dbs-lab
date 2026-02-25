@@ -1,0 +1,362 @@
+lab 8
+
+CursorName %ISOPEN / FOUND / NOT FOUND:
+1.
+The HRD manager has decided to raise the salary of all the Instructors in a given department number by 5%. Whenever, any such raise is given to the instructor, a record for the same is maintained in the salary_raise table. It includes the Instuctor Id, the date when the raise was given and the actual raise amount. Write a PL/SQL block to update the salary of each Instructor and insert a record in the salary_raise table.
+
+->
+CREATE TABLE salary_raise (
+    ID VARCHAR2(5),
+    Raise_Date DATE,
+    Raise_Amount NUMBER(8,2)
+);
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+DECLARE
+   
+    v_dept_input  department.dept_name%TYPE := '&Enter_Department_Name';
+    v_raise_perc  NUMBER := &Enter_Raise_Percentage_Decimal; -- e.g. 0.05 for 5%
+    
+    v_raise_amt   NUMBER(8,2);
+    
+    CURSOR c_instructors IS
+        SELECT ID, salary 
+        FROM instructor 
+        WHERE dept_name = v_dept_input;
+        
+    v_instr_id instructor.ID%TYPE;
+    v_salary   instructor.salary%TYPE;
+
+BEGIN
+    -- Open the Cursor
+    OPEN c_instructors;
+    
+    DBMS_OUTPUT.PUT_LINE('--- Processing Raises for: ' || v_dept_input || ' ---');
+
+    LOOP
+        FETCH c_instructors INTO v_instr_id, v_salary;
+        
+        -- Use %NOTFOUND attribute to break the loop
+        EXIT WHEN c_instructors%NOTFOUND;
+        
+        v_raise_amt := v_salary * v_raise_perc;
+        
+        UPDATE instructor 
+        SET salary = salary + v_raise_amt
+        WHERE ID = v_instr_id;
+        
+        -- 2. Insert record into salary_raise table
+        INSERT INTO salary_raise (ID, Raise_Date, Raise_Amount)
+        VALUES (v_instr_id, SYSDATE, v_raise_amt);
+        
+        DBMS_OUTPUT.PUT_LINE('Updated ID: ' || v_instr_id || ' | Added: ' || v_raise_amt);
+    END LOOP;
+
+    IF c_instructors%ROWCOUNT = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('No instructors found in the "' || v_dept_input || '" department.');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('-------------------------------------------');
+        DBMS_OUTPUT.PUT_LINE('Success: ' || c_instructors%ROWCOUNT || ' instructors updated.');
+    END IF;
+    CLOSE c_instructors;
+    
+
+    COMMIT;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An error occurred: ' || SQLERRM);
+        -- Using %ISOPEN to safely close cursor if an error happens
+        IF c_instructors%ISOPEN THEN
+            CLOSE c_instructors;
+        END IF;
+        ROLLBACK;
+END;
+/
+
+
+_________________________________________________________________________________________________________________
+CursorName%ROWCOUNT:
+2.
+Write a PL/SQL block that will display the ID, name, dept_name and tot_cred of the first 10 students with lowest total credit.
+
+->
+SET SERVEROUTPUT ON;
+
+DECLARE
+    -- 1. Declare cursor with ORDER BY to get lowest credits first
+    CURSOR c_students IS
+        SELECT ID, name, dept_name, tot_cred
+        FROM student
+        ORDER BY tot_cred ASC;
+
+    v_student c_students%ROWTYPE;
+
+BEGIN
+    -- 2. Open the cursor
+    OPEN c_students;
+
+    DBMS_OUTPUT.PUT_LINE('--- 10 Students with Lowest Total Credits ---');
+    DBMS_OUTPUT.PUT_LINE('ID    | Name                 | Dept       | Credits');
+    DBMS_OUTPUT.PUT_LINE('---------------------------------------------------');
+
+    LOOP
+        -- 3. Fetch the data
+        FETCH c_students INTO v_student;
+
+        -- Exit if no more students exist OR we have reached 10 rows
+        EXIT WHEN c_students%NOTFOUND OR c_students%ROWCOUNT > 10;
+
+        -- Display student details
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD(v_student.ID, 5) || ' | ' || 
+            RPAD(v_student.name, 20) || ' | ' || 
+            RPAD(v_student.dept_name, 10) || ' | ' || 
+            v_student.tot_cred
+        );
+
+    END LOOP;
+
+    -- 4. Check if we found any students at all
+    IF c_students%ROWCOUNT = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('No student records found.');
+    END IF;
+
+    -- 5. Close the cursor
+    CLOSE c_students;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An error occurred: ' || SQLERRM);
+        IF c_students%ISOPEN THEN
+            CLOSE c_students;
+        END IF;
+END;
+/
+
+____________________________________________________________________________________________________________
+Cursor For Loops:
+3.
+Print the Course details and the total number of students registered for each course along with the course details - (Course-id, title, dept-name, credits, instructor_name, building, room-number, time-slot-id, tot_student_no )
+
+->
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+BEGIN
+    DBMS_OUTPUT.PUT_LINE(RPAD('-', 120, '-'));
+    DBMS_OUTPUT.PUT_LINE(
+        RPAD('ID', 9) || 
+        RPAD('Title', 25) || 
+        RPAD('Dept', 12) || 
+        RPAD('Instr', 12) || 
+        RPAD('Room', 12) || 
+        'Students'
+    );
+    DBMS_OUTPUT.PUT_LINE(RPAD('-', 120, '-'));
+
+    -- The Cursor FOR Loop automatically declares r_course as a record
+    FOR r_course IN (
+        SELECT 
+            c.course_id, 
+            c.title, 
+            c.dept_name, 
+            c.credits, 
+            i.name AS instructor_name, 
+            s.building, 
+            s.room_number, 
+            s.time_slot_id,
+            (SELECT COUNT(*) FROM takes t 
+             WHERE t.course_id = c.course_id 
+             AND t.sec_id = s.sec_id 
+             AND t.semester = s.semester 
+             AND t.year = s.year) AS tot_student_no
+        FROM course c
+        JOIN section s ON c.course_id = s.course_id
+        JOIN teaches te ON s.course_id = te.course_id 
+            AND s.sec_id = te.sec_id 
+            AND s.semester = te.semester 
+            AND s.year = te.year
+        JOIN instructor i ON te.ID = i.ID
+    ) 
+    LOOP
+        -- Accessing fields directly using the record name 'r_course'
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD(r_course.course_id, 9) || 
+            RPAD(r_course.title, 25) || 
+            RPAD(r_course.dept_name, 12) || 
+            RPAD(r_course.instructor_name, 12) || 
+            RPAD(r_course.building || ' ' || r_course.room_number, 12) || 
+            r_course.tot_student_no
+        );
+    END LOOP;
+    
+    DBMS_OUTPUT.PUT_LINE(RPAD('-', 120, '-'));
+END;
+/
+----------------------------------------------------------------------------------------------------------------
+4.
+Find all students who take the course with Course-id: CS101 and if he/ she has less than 30 total credit (tot-cred), deregister the student from that course. (Delete the entry in Takes table).
+->
+SET SERVEROUTPUT ON;
+
+BEGIN
+    -- 1. Loop through students enrolled in CS-101
+    FOR r_enroll IN (
+        SELECT t.ID, t.course_id, s.name, s.tot_cred, t.sec_id, t.semester, t.year
+        FROM takes t
+        JOIN student s ON t.ID = s.ID
+        WHERE t.course_id = 'CS-101'
+    ) 
+    LOOP
+        -- 2. Check if the student has less than 30 credits
+        IF r_enroll.tot_cred < 30 THEN
+            
+            -- 3. Delete the record from the takes table
+            DELETE FROM takes
+            WHERE ID = r_enroll.ID 
+              AND course_id = r_enroll.course_id
+              AND sec_id = r_enroll.sec_id
+              AND semester = r_enroll.semester
+              AND year = r_enroll.year;
+
+            DBMS_OUTPUT.PUT_LINE('Deregistered: ' || r_enroll.name || ' (ID: ' || r_enroll.ID || ') - Credits: ' || r_enroll.tot_cred);
+        
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('Retained: ' || r_enroll.name || ' (Credits: ' || r_enroll.tot_cred || ')');
+        END IF;
+    END LOOP;
+
+    -- 4. Save changes
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('--- Operation Complete ---');
+END;
+/
+_____________________________________________________________________________________________________________________
+Where Current of:
+5.Alter StudentTable(refer Lab No. 8 Exercise) by resetting column LetterGrade to F. Then write a PL/SQL block to update the table by mapping GPA to the corresponding letter grade for each student.
+
+->
+UPDATE StudentTable SET LetterGrade = 'F';
+COMMIT;
+SET SERVEROUTPUT ON;
+
+DECLARE
+    -- 1. Declare cursor with FOR UPDATE clause
+    CURSOR c_students IS 
+        SELECT RollNo, GPA, LetterGrade 
+        FROM StudentTable 
+        FOR UPDATE; -- This is required to use WHERE CURRENT OF
+
+    v_grade VARCHAR2(2);
+BEGIN
+    -- 2. Open and loop through the cursor
+    FOR r_stu IN c_students LOOP
+        
+        -- Mapping logic
+        IF r_stu.GPA >= 9 THEN v_grade := 'A+';
+        ELSIF r_stu.GPA >= 8 THEN v_grade := 'A';
+        ELSIF r_stu.GPA >= 7 THEN v_grade := 'B';
+        ELSIF r_stu.GPA >= 6 THEN v_grade := 'C';
+        ELSIF r_stu.GPA >= 5 THEN v_grade := 'D';
+        ELSIF r_stu.GPA >= 4 THEN v_grade := 'E';
+        ELSE v_grade := 'F';
+        END IF;
+
+        -- 3. Update the table using WHERE CURRENT OF
+        UPDATE StudentTable 
+        SET LetterGrade = v_grade
+        WHERE CURRENT OF c_students; -- Updates the row the cursor is currently on
+
+        DBMS_OUTPUT.PUT_LINE('Updated RollNo ' || r_stu.RollNo || ' to Grade ' || v_grade);
+    END LOOP;
+
+    COMMIT;
+END;
+/
+________________________________________________________________________________________________________________
+Parameterized Cursors:
+6.Write a PL/SQL block to print the list of Instructors teaching a specified course.
+->
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+DECLARE
+    -- 1. Declare cursor with a parameter (p_course_id)
+    CURSOR c_instr_list (p_course_id VARCHAR2) IS
+        SELECT i.ID, i.name, i.dept_name
+        FROM instructor i
+        JOIN teaches t ON i.ID = t.ID
+        WHERE t.course_id = p_course_id;
+
+    -- Variable to take user input
+    v_input_course VARCHAR2(8) := '&Enter_Course_ID';
+    v_found BOOLEAN := FALSE;
+
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('--- Instructors for Course: ' || v_input_course || ' ---');
+
+    -- 2. Open cursor and pass the user input as a parameter
+    FOR r_instr IN c_instr_list(v_input_course) LOOP
+        v_found := TRUE;
+        DBMS_OUTPUT.PUT_LINE('ID: ' || r_instr.ID || ' | Name: ' || r_instr.name || ' (' || r_instr.dept_name || ')');
+    END LOOP;
+
+    -- Check if no records were found
+    IF NOT v_found THEN
+        DBMS_OUTPUT.PUT_LINE('No instructors found for this course.');
+    END IF;
+
+END;
+/
+__________________________________________________________________________________________________________________
+7.Write a PL/SQL block to list the students who have registered for a course taught by his/her advisor
+->
+SET SERVEROUTPUT ON;
+SET VERIFY OFF;
+
+DECLARE
+    -- Cursor to find students whose advisor is also their instructor for a course
+    CURSOR c_matching_enrollment IS
+        SELECT 
+            s.ID AS student_id, 
+            s.name AS student_name, 
+            i.name AS advisor_name, 
+            t.course_id
+        FROM student s
+        JOIN advisor a ON s.ID = a.s_ID
+        JOIN instructor i ON a.i_ID = i.ID
+        JOIN takes t ON s.ID = t.ID
+        JOIN teaches te ON t.course_id = te.course_id 
+                        AND t.sec_id = te.sec_id 
+                        AND t.semester = te.semester 
+                        AND t.year = te.year
+        WHERE te.ID = a.i_ID; -- The key condition: Advisor = Instructor
+
+    v_count NUMBER := 0;
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('--- Students Enrolled in Advisor''s Course ---');
+    DBMS_OUTPUT.PUT_LINE(RPAD('Student', 15) || ' | ' || RPAD('Advisor', 15) || ' | ' || 'Course');
+    DBMS_OUTPUT.PUT_LINE('------------------------------------------------------------');
+
+    FOR r_match IN c_matching_enrollment LOOP
+        v_count := v_count + 1;
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD(r_match.student_name, 15) || ' | ' || 
+            RPAD(r_match.advisor_name, 15) || ' | ' || 
+            r_match.course_id
+        );
+    END LOOP;
+
+    IF v_count = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('No students found taking courses from their advisors.');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('------------------------------------------------------------');
+        DBMS_OUTPUT.PUT_LINE('Total Records: ' || v_count);
+    END IF;
+END;
+/
+__________________________________________________________________________________________________________________
+
+
